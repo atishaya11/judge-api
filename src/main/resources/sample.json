@@ -1,0 +1,18 @@
+{
+  "compilerId": "1",
+  "source": "import java.util.Scanner;public class Main {public static void main(String[] args) {Scanner in = new Scanner(System.in);String input = in.next();System.out.println(\"Hello \" + input);}}",
+  "testCaseList": [
+    {
+      "id": "1",
+      "input": "World",
+      "output": "Hello World",
+      "fetchData": false
+    },
+    {
+      "id": "2",
+      "input": "World",
+      "output": "Hello World",
+      "fetchData": false
+    }
+  ]
+}

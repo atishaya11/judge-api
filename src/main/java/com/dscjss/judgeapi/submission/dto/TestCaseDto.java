@@ -6,7 +6,7 @@ public class TestCaseDto {
     private String input;
     private String output;
     private boolean fetchData; // true if the data is to be fetched through id
-
+    private int timeLimit;
 
     public int getId() {
         return id;
@@ -38,5 +38,13 @@ public class TestCaseDto {
 
     public void setFetchData(boolean fetchData) {
         this.fetchData = fetchData;
+    }
+
+    public int getTimeLimit() {
+        return timeLimit;
+    }
+
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
     }
 }

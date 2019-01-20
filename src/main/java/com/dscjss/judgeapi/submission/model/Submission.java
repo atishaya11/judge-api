@@ -15,10 +15,10 @@ public class Submission {
     @Column(name = "executing")
     private boolean executing;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     private Compiler compiler;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private Result result;
 
     @OneToMany

@@ -1,10 +1,11 @@
 package com.dscjss.judgeapi.submission.service;
 
 
-import com.dscjss.judgeapi.submission.SubmissionRequest;
+import com.dscjss.judgeapi.submission.dto.SubmissionRequest;
 import com.dscjss.judgeapi.submission.dto.SubmissionDto;
 import com.dscjss.judgeapi.submission.dto.Task;
 import com.dscjss.judgeapi.submission.dto.TestCaseDto;
+import com.dscjss.judgeapi.submission.exception.SourceDownloadException;
 import com.dscjss.judgeapi.submission.model.Compiler;
 import com.dscjss.judgeapi.submission.model.Result;
 import com.dscjss.judgeapi.submission.model.Submission;
@@ -16,6 +17,7 @@ import com.dscjss.judgeapi.util.Constants;
 import com.dscjss.judgeapi.util.FileManager;
 import com.dscjss.judgeapi.util.ObjectMapper;
 import com.dscjss.judgeapi.util.Status;
+import org.apache.commons.codec.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ public class SubmissionServiceImpl implements SubmissionService {
 
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
-    public Submission createSubmission(SubmissionRequest submissionRequest) {
+    public Submission createSubmission(final SubmissionRequest submissionRequest) {
         Submission submission = new Submission();
         submission.setCompiler(getCompiler(submissionRequest.getCompilerId(), submissionRequest.getCompilerVersionId()));
         submission.setSource(submissionRequest.getSource());
@@ -94,10 +96,12 @@ public class SubmissionServiceImpl implements SubmissionService {
         if (testCaseDtoList != null && testCaseDtoList.size() > 0) {
             testCaseDtoList.forEach(testCaseDto -> {
                 TestCase testCase = new TestCase();
+                testCase.setTestCaseId(testCaseDto.getId());
                 testCase.setFetchData(testCaseDto.isFetchData());
                 testCase.setInput(testCaseDto.getInput());
                 testCase.setOutput(testCaseDto.getOutput());
                 testCase.setSubmission(submission);
+                testCase.setTimeLimit(testCaseDto.getTimeLimit());
                 testCaseRepository.save(testCase);
                 testCases.add(testCase);
             });
@@ -122,9 +126,11 @@ public class SubmissionServiceImpl implements SubmissionService {
         });
     }
 
+
     private Task createTask(Submission submission, TestCase testCase) {
         Task task = new Task();
         task.setId(testCase.getId());
+        task.setTimeLimit(testCase.getTimeLimit());
         if (testCase.isFetchData()) {
             task.setInput(fetchInputData(testCase.getTestCaseId()));
         } else {
@@ -134,7 +140,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         task.setLang(submission.getCompiler().getSlug());
         return task;
     }
-
+    //TODO Handle exceptions thrown when the test cases cannot be fetched
     private String fetchInputData(int testCaseId) {
         String url = Constants.FETCH_TEST_DATA_URL + testCaseId + "/input";
         return fetchData(url);
@@ -158,5 +164,16 @@ public class SubmissionServiceImpl implements SubmissionService {
     @Override
     public SubmissionDto getSubmission(int id) {
         return ObjectMapper.getSubmissionDto(submissionRepository.getOne(id));
+    }
+
+    @Override
+    public String getSource(int submissionId) throws SourceDownloadException {
+        try {
+            String fileName = submissionId + "/source.txt";
+            File file = fileManager.downloadSourceFile(fileName);
+            return FileUtils.readFileToString(file, Charsets.UTF_8.name());
+        }catch (InterruptedException | IOException e){
+            throw new SourceDownloadException("Source code download failed.");
+        }
     }
 }

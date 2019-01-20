@@ -1,6 +1,5 @@
-package com.dscjss.judgeapi.submission;
+package com.dscjss.judgeapi.submission.dto;
 
-import com.dscjss.judgeapi.submission.dto.TestCaseDto;
 
 import java.util.List;
 

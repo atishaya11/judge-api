@@ -2,11 +2,14 @@ package com.dscjss.judgeapi.submission.service;
 
 
 import com.dscjss.judgeapi.submission.dto.TaskResult;
+import com.dscjss.judgeapi.submission.judge.DefaultMasterJudge;
 import com.dscjss.judgeapi.submission.judge.Judge;
 import com.dscjss.judgeapi.submission.judge.LineByLineJudge;
+import com.dscjss.judgeapi.submission.judge.MasterJudge;
 import com.dscjss.judgeapi.submission.model.Result;
 import com.dscjss.judgeapi.submission.model.Submission;
 import com.dscjss.judgeapi.submission.model.TestCase;
+import com.dscjss.judgeapi.submission.repository.SubmissionRepository;
 import com.dscjss.judgeapi.submission.repository.TestCaseRepository;
 import com.dscjss.judgeapi.util.Constants;
 import com.dscjss.judgeapi.util.FileManager;
@@ -17,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
@@ -29,19 +33,22 @@ public class JudgeServiceImpl implements JudgeService {
 
     private Logger logger = LoggerFactory.getLogger(JudgeServiceImpl.class);
 
-    private TestCaseRepository testCaseRepository;
-    private FileManager fileManager;
+    private final TestCaseRepository testCaseRepository;
+    private final FileManager fileManager;
+    private final SubmissionRepository submissionRepository;
 
 
     @Autowired
-    public JudgeServiceImpl(TestCaseRepository testCaseRepository, FileManager fileManager) {
+    public JudgeServiceImpl(TestCaseRepository testCaseRepository, FileManager fileManager, SubmissionRepository submissionRepository) {
         this.testCaseRepository = testCaseRepository;
         this.fileManager = fileManager;
+        this.submissionRepository = submissionRepository;
     }
 
 
     @Async
     @Override
+    @Transactional
     public void judgeResult(TaskResult taskResult) {
 
         TestCase testCase = testCaseRepository.getOne(taskResult.getId());
@@ -69,7 +76,21 @@ public class JudgeServiceImpl implements JudgeService {
         }
         testCase.setTime(taskResult.getTime());
         testCase.setMemory(taskResult.getMemory());
-        testCaseRepository.save(testCase);
+        testCaseRepository.saveAndFlush(testCase);
+        boolean allTestCasesJudged = true;
+        for(TestCase tc : submission.getTestCases()){
+            if(tc.getStatus() == Status.QUEUED){
+                allTestCasesJudged = false;
+                break;
+            }
+        }
+        if(allTestCasesJudged){
+            MasterJudge masterJudge = new DefaultMasterJudge();
+            Result result = masterJudge.judge(submission);
+            submission.setResult(result);
+            submission.setExecuting(false);
+            submissionRepository.save(submission);
+        }
     }
 
     private void uploadStreams(TaskResult taskResult, int submissionId, int testCaseId) {

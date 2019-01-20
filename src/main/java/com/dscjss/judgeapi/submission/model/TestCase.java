@@ -20,6 +20,7 @@ public class TestCase {
     private int testCaseId;
 
     @ManyToOne
+    @JsonIgnore
     private Submission submission;
 
     private double score;
@@ -32,6 +33,9 @@ public class TestCase {
     private String input;
 
     private String output;
+
+    @Column(name = "time_limit")
+    private int timeLimit;
 
 
     public int getId() {
@@ -113,5 +117,13 @@ public class TestCase {
 
     public void setFetchData(boolean fetchData) {
         this.fetchData = fetchData;
+    }
+
+    public int getTimeLimit() {
+        return timeLimit;
+    }
+
+    public void setTimeLimit(int timeLimit) {
+        this.timeLimit = timeLimit;
     }
 }

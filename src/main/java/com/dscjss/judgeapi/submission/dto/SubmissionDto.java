@@ -14,9 +14,10 @@ public class SubmissionDto {
     private boolean executing;
     private Compiler compiler;
     private Result result;
+    private String source;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss a z")
     private Date date;
-    private List<TestCase> testCases;
+    private List<TestCaseResult> testCaseResultList;
 
 
     public int getId() {
@@ -51,6 +52,14 @@ public class SubmissionDto {
         this.result = result;
     }
 
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
     public Date getDate() {
         return date;
     }
@@ -59,11 +68,12 @@ public class SubmissionDto {
         this.date = date;
     }
 
-    public List<TestCase> getTestCases() {
-        return testCases;
+
+    public List<TestCaseResult> getTestCaseResultList() {
+        return testCaseResultList;
     }
 
-    public void setTestCases(List<TestCase> testCases) {
-        this.testCases = testCases;
+    public void setTestCaseResultList(List<TestCaseResult> testCaseResultList) {
+        this.testCaseResultList = testCaseResultList;
     }
 }

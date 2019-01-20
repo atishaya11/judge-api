@@ -2,6 +2,7 @@ package com.dscjss.judgeapi.submission.model;
 
 
 import com.dscjss.judgeapi.util.Status;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.persistence.*;
 
@@ -19,6 +20,7 @@ public class Result {
     private int time;
     private double memory;
 
+    @JsonIgnore
     public int getId() {
         return id;
     }

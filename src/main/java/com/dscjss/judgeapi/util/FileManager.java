@@ -18,15 +18,21 @@ public class FileManager {
     }
 
     public void uploadSubmissionSourceFile(String fileName, File file) throws InterruptedException {
-        ;
         s3Services.uploadFile(fileName, file);
 
     }
 
     public void uploadSubmissionOutputFile(String fileName, File file) throws InterruptedException {
-        ;
         s3Services.uploadFile(fileName, file);
 
     }
 
+    public File downloadSourceFile(String fileName) throws InterruptedException {
+        String path = "/tmp/source/" + fileName;
+        File dir = new File(path);
+        boolean created = dir.mkdirs();
+        File tempFile = new File(dir.getAbsolutePath() +"/" + System.currentTimeMillis());
+        s3Services.downloadFile(fileName, tempFile.getAbsolutePath());
+        return tempFile;
+    }
 }

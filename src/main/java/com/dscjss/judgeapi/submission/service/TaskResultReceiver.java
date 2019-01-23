@@ -24,7 +24,9 @@ public class TaskResultReceiver {
 
     @RabbitHandler
     public void receiveMessage(TaskResult taskResult) {
+        logger.info("Received task result after execution. Task id : {}.", taskResult.getId());
         judgeService.judgeResult(taskResult);
+        logger.info("Task id : {} judged.", taskResult.getId());
     }
 
 }

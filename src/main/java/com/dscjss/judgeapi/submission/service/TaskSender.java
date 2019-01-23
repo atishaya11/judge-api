@@ -2,8 +2,10 @@ package com.dscjss.judgeapi.submission.service;
 
 
 import com.dscjss.judgeapi.submission.dto.Task;
+import com.dscjss.judgeapi.submission.exception.TaskFailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.AmqpConnectException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,12 +31,17 @@ public class TaskSender {
     }
 
 
-    public void send(Task task) {
-        rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, task, m -> {
-            m.getMessageProperties().getHeaders().remove("__TypeId__");
-            return m;
-        });
-        logger.info("Task {} queued.", task);
+    public void send(Task task) throws TaskFailedException {
+        try{
+            rabbitTemplate.convertAndSend(EXCHANGE, ROUTING_KEY, task, m -> {
+                m.getMessageProperties().getHeaders().remove("__TypeId__");
+                return m;
+            });
+            logger.info("Task {} queued.", task);
+        }catch (AmqpConnectException e){
+            logger.error("RabbitMQ not running, task cannot be queued.");
+            throw new TaskFailedException("Task cannot be queued.");
+        }
     }
 
 }

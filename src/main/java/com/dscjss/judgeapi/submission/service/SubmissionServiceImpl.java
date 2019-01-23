@@ -6,6 +6,7 @@ import com.dscjss.judgeapi.submission.dto.SubmissionDto;
 import com.dscjss.judgeapi.submission.dto.Task;
 import com.dscjss.judgeapi.submission.dto.TestCaseDto;
 import com.dscjss.judgeapi.submission.exception.SourceDownloadException;
+import com.dscjss.judgeapi.submission.exception.TaskFailedException;
 import com.dscjss.judgeapi.submission.model.Compiler;
 import com.dscjss.judgeapi.submission.model.Result;
 import com.dscjss.judgeapi.submission.model.Submission;
@@ -65,6 +66,9 @@ public class SubmissionServiceImpl implements SubmissionService {
         submission.setSource(submissionRequest.getSource());
         submission.setExecuting(true);
         submission.setDate(new Date());
+        Result result = new Result();
+        result.setStatus(Status.RUNNING);
+        submission.setResult(result);
         submission.setJudgeId(submissionRequest.getJudgeId() == 0 ? Constants.DEFAULT_JUDGE_ID : submissionRequest.getJudgeId());
         submissionRepository.save(submission);
         return submission;
@@ -86,9 +90,8 @@ public class SubmissionServiceImpl implements SubmissionService {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
             logger.error("Source file upload failed. {}", submission.getId());
-            Result result = new Result();
-            result.setStatus(Status.INTERNAL_ERROR);
-            submission.setResult(result);
+            submission.setExecuting(false);
+            submission.getResult().setStatus(Status.INTERNAL_ERROR);
             submissionRepository.save(submission);
             return;
         }
@@ -102,6 +105,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 testCase.setOutput(testCaseDto.getOutput());
                 testCase.setSubmission(submission);
                 testCase.setTimeLimit(testCaseDto.getTimeLimit());
+                testCase.setStatus(Status.QUEUED);
                 testCaseRepository.save(testCase);
                 testCases.add(testCase);
             });
@@ -112,18 +116,24 @@ public class SubmissionServiceImpl implements SubmissionService {
             testCaseRepository.save(testCase);
         }
         submission.setTestCases(testCases);
-        submissionRepository.save(submission);
-
         logger.info("Test Cases for submission created. Ready to be queued. ");
-        queueSubmission(submission);
 
+        try {
+            queueSubmission(submission);
+            logger.info("Submission queued.");
+        } catch (TaskFailedException e) {
+            logger.error("Submission failed due to an internal error.");
+            submission.setExecuting(false);
+            submission.getResult().setStatus(Status.INTERNAL_ERROR);
+        }
+        submissionRepository.save(submission);
     }
 
-    private void queueSubmission(Submission submission) {
-        submission.getTestCases().forEach(testCase -> {
+    private void queueSubmission(Submission submission) throws TaskFailedException {
+        for (TestCase testCase : submission.getTestCases()) {
             Task task = createTask(submission, testCase);
             taskSender.send(task);
-        });
+        }
     }
 
 

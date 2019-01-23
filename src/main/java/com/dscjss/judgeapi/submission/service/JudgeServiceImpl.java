@@ -87,7 +87,11 @@ public class JudgeServiceImpl implements JudgeService {
         if(allTestCasesJudged){
             MasterJudge masterJudge = new DefaultMasterJudge();
             Result result = masterJudge.judge(submission);
-            submission.setResult(result);
+            Result submissionResult = submission.getResult();
+            submissionResult.setStatus(result.getStatus());
+            submissionResult.setMemory(result.getMemory());
+            submissionResult.setTime(result.getTime());
+            submissionResult.setScore(result.getScore());
             submission.setExecuting(false);
             submissionRepository.save(submission);
         }

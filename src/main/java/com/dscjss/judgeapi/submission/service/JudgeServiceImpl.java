@@ -25,6 +25,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 
 import static com.dscjss.judgeapi.util.Constants.*;
 
@@ -37,119 +41,50 @@ public class JudgeServiceImpl implements JudgeService {
     private final FileManager fileManager;
     private final SubmissionRepository submissionRepository;
 
+    private Map<Integer, CountDownLatch> countDownLatchMap = new ConcurrentHashMap<>();
+
+    private final SubmissionJudgeService submissionJudgeService;
+
+    private final TestCaseJudgeService testCaseJudgeService;
+
 
     @Autowired
-    public JudgeServiceImpl(TestCaseRepository testCaseRepository, FileManager fileManager, SubmissionRepository submissionRepository) {
+    public JudgeServiceImpl(TestCaseRepository testCaseRepository, FileManager fileManager, SubmissionRepository submissionRepository, SubmissionJudgeService submissionJudgeService, TestCaseJudgeService testCaseJudgeService) {
         this.testCaseRepository = testCaseRepository;
         this.fileManager = fileManager;
         this.submissionRepository = submissionRepository;
+        this.submissionJudgeService = submissionJudgeService;
+        this.testCaseJudgeService = testCaseJudgeService;
     }
-
 
     @Async
     @Override
-    @Transactional
-    public void judgeResult(TaskResult taskResult) {
-
+    public void processTaskResult(TaskResult taskResult) {
         TestCase testCase = testCaseRepository.getOne(taskResult.getId());
         Submission submission = testCase.getSubmission();
-        uploadStreams(taskResult, submission.getId(), testCase.getTestCaseId());
-        if (taskResult.getStatus() == Status.EXECUTED) {
-            if (testCase.isFetchData()) {
-                testCase.setOutput(fetchOutputData(testCase.getTestCaseId()));
+        fileManager.uploadStreams(taskResult, submission.getId(), testCase.getTestCaseId());
+        CountDownLatch countDownLatch = countDownLatchMap.putIfAbsent(submission.getId(), new CountDownLatch(submission.getTestCases().size()));
+        if(countDownLatch == null){
+            countDownLatch = countDownLatchMap.get(submission.getId());
+            CountDownLatch finalCountDownLatch = countDownLatch;
+            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, testCase.getId(), finalCountDownLatch);
+            new Thread(runnable).start();
+            try {
+                countDownLatch.await();
+                countDownLatchMap.remove(submission.getId());
+                submissionJudgeService.judge(submission.getId());
+            } catch (InterruptedException e) {
+                logger.error("Unable to judge submission, internal error.");
+                submissionJudgeService.handleError(submission.getId());
+                e.printStackTrace();
             }
-            int judgeId = submission.getJudgeId();
-            if (judgeId == Constants.DEFAULT_JUDGE_ID) {
-                Judge judge = new LineByLineJudge();
-                int result = judge.judge(testCase, taskResult.getStdOut());
-                if (testCase.isFetchData()) {
-                    testCase.setOutput(null);
-                }
-                if (result == 1) {
-                    testCase.setStatus(Status.CORRECT);
-                } else if (result == 0) {
-                    testCase.setStatus(Status.WRONG);
-                }
-            }
-        } else {
-            testCase.setStatus(taskResult.getStatus());
-        }
-        testCase.setTime(taskResult.getTime());
-        testCase.setMemory(taskResult.getMemory());
-        testCaseRepository.saveAndFlush(testCase);
-        boolean allTestCasesJudged = true;
-        for(TestCase tc : submission.getTestCases()){
-            if(tc.getStatus() == Status.QUEUED){
-                allTestCasesJudged = false;
-                break;
-            }
-        }
-        if(allTestCasesJudged){
-            MasterJudge masterJudge = new DefaultMasterJudge();
-            Result result = masterJudge.judge(submission);
-            Result submissionResult = submission.getResult();
-            submissionResult.setStatus(result.getStatus());
-            submissionResult.setMemory(result.getMemory());
-            submissionResult.setTime(result.getTime());
-            submissionResult.setScore(result.getScore());
-            submission.setExecuting(false);
-            submissionRepository.save(submission);
-        }
-    }
-
-    private void uploadStreams(TaskResult taskResult, int submissionId, int testCaseId) {
-        String baseLocation = submissionId + "/" + testCaseId + "/";
-        try {
-            String outputFileName = baseLocation + FILE_NAME_STD_OUTPUT;
-            uploadOutputFile(outputFileName, taskResult.getStdOut());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        String compileErrorFileName = baseLocation + FILE_NAME_COMPILE_ERROR;
-        try {
-            uploadCompileError(compileErrorFileName, taskResult.getCompileErr());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        String stdErrorFileName = baseLocation + FILE_NAME_STD_ERROR;
-        try {
-            uploadStdError(stdErrorFileName, taskResult.getStdErr());
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
+        }else{
+            CountDownLatch finalCountDownLatch = countDownLatch;
+            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, testCase.getId(), finalCountDownLatch);
+            new Thread(runnable).start();
         }
 
     }
 
-    private void uploadStdError(String stdErrorFileName, String stdErr) throws IOException, InterruptedException {
-        uploadData(stdErrorFileName, stdErr);
-    }
-
-    private void uploadCompileError(String compileErrorFile, String stdOut) throws IOException, InterruptedException {
-        uploadData(compileErrorFile, stdOut);
-    }
-
-    private void uploadOutputFile(String outputFileName, String output) throws IOException, InterruptedException {
-        uploadData(outputFileName, output);
-    }
-
-    private void uploadData(String fileName, String data) throws IOException, InterruptedException {
-        File tempFile = new File("/tmp" + "/out" + System.currentTimeMillis());
-        FileUtils.writeStringToFile(tempFile, data);
-        fileManager.uploadSubmissionOutputFile(fileName, tempFile);
-        boolean delete = tempFile.delete();
-    }
-
-    private String fetchOutputData(int testCaseId) {
-        String url = Constants.FETCH_TEST_DATA_URL + testCaseId + "/output";
-        return fetchData(url);
-    }
-
-    //TODO Implement authentication token functionality
-    private String fetchData(String url) {
-        RestTemplate restTemplate = new RestTemplate();
-        String data = restTemplate.getForObject(url, String.class);
-        return data;
-    }
 
 }

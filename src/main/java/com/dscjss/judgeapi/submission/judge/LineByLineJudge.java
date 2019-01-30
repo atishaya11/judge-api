@@ -11,13 +11,19 @@ public class LineByLineJudge implements Judge {
         String actualOutput = testCase.getOutput();
         Scanner scannerA = new Scanner(actualOutput);
         Scanner scannerB = new Scanner(output);
-        while (scannerA.hasNextLine()) {
+        boolean correct = false;
+        while (scannerA.hasNextLine() && scannerB.hasNextLine()) {
             String a = scannerA.nextLine();
             String b = scannerB.nextLine();
-            if (b == null || !b.equals(a)) {
+            correct = b.equals(a);
+            if(!correct){
                 return 0;
             }
         }
-        return 1;
+        if(correct && !scannerA.hasNextLine() && !scannerB.hasNextLine()) {
+            return 1;
+        }
+
+        return 0;
     }
 }

@@ -70,6 +70,30 @@ public class SubmissionServiceImpl implements SubmissionService {
         result.setStatus(Status.RUNNING);
         submission.setResult(result);
         submission.setJudgeId(submissionRequest.getJudgeId() == 0 ? Constants.DEFAULT_JUDGE_ID : submissionRequest.getJudgeId());
+        List<TestCase> testCases = new ArrayList<>();
+        if (submissionRequest.getTestCaseList() != null && submissionRequest.getTestCaseList().size() > 0) {
+            submissionRequest.getTestCaseList().forEach(testCaseDto -> {
+                TestCase testCase = new TestCase();
+                testCase.setTestCaseId(testCaseDto.getId());
+                testCase.setFetchData(testCaseDto.isFetchData());
+                testCase.setInput(testCaseDto.getInput());
+                testCase.setOutput(testCaseDto.getOutput());
+                testCase.setSubmission(submission);
+                testCase.setTimeLimit(testCaseDto.getTimeLimit());
+                testCase.setStatus(Status.QUEUED);
+                testCaseRepository.save(testCase);
+                testCases.add(testCase);
+            });
+        } else {
+            TestCase testCase = new TestCase();
+            testCase.setInput("");
+            testCase.setOutput("");
+            testCase.setFetchData(false);
+            testCase.setSubmission(submission);
+            testCaseRepository.save(testCase);
+        }
+        submission.setTestCases(testCases);
+        logger.info("Test Cases for submission created");
         submissionRepository.save(submission);
         return submission;
     }
@@ -95,28 +119,6 @@ public class SubmissionServiceImpl implements SubmissionService {
             submissionRepository.save(submission);
             return;
         }
-        List<TestCase> testCases = new ArrayList<>();
-        if (testCaseDtoList != null && testCaseDtoList.size() > 0) {
-            testCaseDtoList.forEach(testCaseDto -> {
-                TestCase testCase = new TestCase();
-                testCase.setTestCaseId(testCaseDto.getId());
-                testCase.setFetchData(testCaseDto.isFetchData());
-                testCase.setInput(testCaseDto.getInput());
-                testCase.setOutput(testCaseDto.getOutput());
-                testCase.setSubmission(submission);
-                testCase.setTimeLimit(testCaseDto.getTimeLimit());
-                testCase.setStatus(Status.QUEUED);
-                testCaseRepository.save(testCase);
-                testCases.add(testCase);
-            });
-        } else {
-            TestCase testCase = new TestCase();
-            testCase.setFetchData(false);
-            testCase.setSubmission(submission);
-            testCaseRepository.save(testCase);
-        }
-        submission.setTestCases(testCases);
-        logger.info("Test Cases for submission created. Ready to be queued. ");
 
         try {
             queueSubmission(submission);

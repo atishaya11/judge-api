@@ -39,7 +39,6 @@ public class JudgeServiceImpl implements JudgeService {
 
     private final TestCaseRepository testCaseRepository;
     private final FileManager fileManager;
-    private final SubmissionRepository submissionRepository;
 
     private Map<Integer, CountDownLatch> countDownLatchMap = new ConcurrentHashMap<>();
 
@@ -52,7 +51,6 @@ public class JudgeServiceImpl implements JudgeService {
     public JudgeServiceImpl(TestCaseRepository testCaseRepository, FileManager fileManager, SubmissionRepository submissionRepository, SubmissionJudgeService submissionJudgeService, TestCaseJudgeService testCaseJudgeService) {
         this.testCaseRepository = testCaseRepository;
         this.fileManager = fileManager;
-        this.submissionRepository = submissionRepository;
         this.submissionJudgeService = submissionJudgeService;
         this.testCaseJudgeService = testCaseJudgeService;
     }
@@ -67,7 +65,7 @@ public class JudgeServiceImpl implements JudgeService {
         if(countDownLatch == null){
             countDownLatch = countDownLatchMap.get(submission.getId());
             CountDownLatch finalCountDownLatch = countDownLatch;
-            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, testCase.getId(), finalCountDownLatch);
+            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, finalCountDownLatch);
             new Thread(runnable).start();
             try {
                 countDownLatch.await();
@@ -80,7 +78,7 @@ public class JudgeServiceImpl implements JudgeService {
             }
         }else{
             CountDownLatch finalCountDownLatch = countDownLatch;
-            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, testCase.getId(), finalCountDownLatch);
+            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, finalCountDownLatch);
             new Thread(runnable).start();
         }
 

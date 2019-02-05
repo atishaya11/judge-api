@@ -32,7 +32,7 @@ public class TestCaseJudgeService {
 
 
     @Transactional
-    public void judge(TaskResult taskResult, int testCaseId, CountDownLatch countDownLatch) {
+    public void judge(TaskResult taskResult, CountDownLatch countDownLatch) {
         TestCase testCase = testCaseRepository.getOne(taskResult.getId());
         Submission submission = testCase.getSubmission();
         if (taskResult.getStatus() == Status.EXECUTED) {

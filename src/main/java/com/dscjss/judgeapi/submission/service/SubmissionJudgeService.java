@@ -4,6 +4,7 @@ import com.dscjss.judgeapi.submission.judge.DefaultMasterJudge;
 import com.dscjss.judgeapi.submission.judge.MasterJudge;
 import com.dscjss.judgeapi.submission.model.Result;
 import com.dscjss.judgeapi.submission.model.Submission;
+import com.dscjss.judgeapi.submission.model.TestCase;
 import com.dscjss.judgeapi.submission.repository.SubmissionRepository;
 import com.dscjss.judgeapi.util.Status;
 import org.slf4j.Logger;

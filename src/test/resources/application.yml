@@ -1,0 +1,6 @@
+amazonProperties:
+  endpointUrl: ${AMAZON_S3_ENDPOINT}
+  accessKey:  ${AMAZON_ACCESS_KEY}
+  secretKey: ${AMAZON_SECRET_KEY}
+  submissionDetailsBucket: ${AMAZON_S3_SUBMISSION_DETAILS_BUCKET}
+  region:  ${AMAZON_S3_BUCKET_REGION}

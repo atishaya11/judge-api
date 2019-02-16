@@ -32,6 +32,12 @@ public class Submission {
     @Column(name = "judge_id")
     private int judgeId;
 
+    @Column(name = "max_score")
+    private int maxScore;
+
+    @Column(name = "master_judge_id")
+    private int masterJudgeId;
+
     public int getId() {
         return id;
     }
@@ -94,5 +100,21 @@ public class Submission {
 
     public void setJudgeId(int judgeId) {
         this.judgeId = judgeId;
+    }
+
+    public int getMaxScore() {
+        return maxScore;
+    }
+
+    public void setMaxScore(int maxScore) {
+        this.maxScore = maxScore;
+    }
+
+    public int getMasterJudgeId() {
+        return masterJudgeId;
+    }
+
+    public void setMasterJudgeId(int masterJudgeId) {
+        this.masterJudgeId = masterJudgeId;
     }
 }

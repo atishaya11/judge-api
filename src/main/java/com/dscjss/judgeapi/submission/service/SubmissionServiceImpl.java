@@ -1,6 +1,7 @@
 package com.dscjss.judgeapi.submission.service;
 
 
+import com.amazonaws.AmazonClientException;
 import com.dscjss.judgeapi.submission.dto.SubmissionRequest;
 import com.dscjss.judgeapi.submission.dto.SubmissionDto;
 import com.dscjss.judgeapi.submission.dto.Task;
@@ -23,6 +24,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -66,10 +68,12 @@ public class SubmissionServiceImpl implements SubmissionService {
         submission.setSource(submissionRequest.getSource());
         submission.setExecuting(true);
         submission.setDate(new Date());
+        submission.setMaxScore(submissionRequest.getMaxScore());
         Result result = new Result();
         result.setStatus(Status.RUNNING);
         submission.setResult(result);
-        submission.setJudgeId(submissionRequest.getJudgeId() == 0 ? Constants.DEFAULT_JUDGE_ID : submissionRequest.getJudgeId());
+        submission.setJudgeId(submissionRequest.getJudgeId() == 0 ? Constants.JUDGE_ID_DEFAULT : submissionRequest.getJudgeId());
+        submission.setMasterJudgeId(submissionRequest.getMasterJudgeId()  == 0 ? Constants.MASTER_JUDGE_ID_DEFAULT : submissionRequest.getMasterJudgeId());
         List<TestCase> testCases = new ArrayList<>();
         if (submissionRequest.getTestCaseList() != null && submissionRequest.getTestCaseList().size() > 0) {
             submissionRequest.getTestCaseList().forEach(testCaseDto -> {
@@ -111,7 +115,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         String submissionSourceFileName = submission.getId() + "/" + "source.txt";
         try {
             uploadSourceSubmissionFile(submissionSourceFileName, submission.getSource());
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException |AmazonClientException e) {
             e.printStackTrace();
             logger.error("Source file upload failed. {}", submission.getId());
             submission.setExecuting(false);
@@ -165,7 +169,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         return data;
     }
 
-    private void uploadSourceSubmissionFile(String submissionSourceFileName, String source) throws IOException, InterruptedException {
+    private void uploadSourceSubmissionFile(String submissionSourceFileName, String source) throws IOException, InterruptedException, AmazonClientException {
         File tempFile = new File("/tmp" + "/src/" + System.currentTimeMillis());
         FileUtils.writeStringToFile(tempFile, source);
         fileManager.uploadSubmissionSourceFile(submissionSourceFileName, tempFile);
@@ -179,6 +183,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
     @Override
+    @Cacheable(value = "submission_source", key = "#submissionId", unless = "#result != null && #result.length() > 0")
     public String getSource(int submissionId) throws SourceDownloadException {
         try {
             String fileName = submissionId + "/source.txt";

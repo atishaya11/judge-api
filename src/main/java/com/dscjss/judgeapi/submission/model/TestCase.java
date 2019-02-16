@@ -37,7 +37,6 @@ public class TestCase {
     @Column(name = "time_limit")
     private int timeLimit;
 
-
     public int getId() {
         return id;
     }

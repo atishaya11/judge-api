@@ -20,6 +20,9 @@ public class Result {
     private int time;
     private double memory;
 
+    @Column(name = "source_char_count")
+    private int sourceCharCount;
+
     @JsonIgnore
     public int getId() {
         return id;
@@ -59,5 +62,13 @@ public class Result {
 
     public void setMemory(double memory) {
         this.memory = memory;
+    }
+
+    public int getSourceCharCount() {
+        return sourceCharCount;
+    }
+
+    public void setSourceCharCount(int sourceCharCount) {
+        this.sourceCharCount = sourceCharCount;
     }
 }

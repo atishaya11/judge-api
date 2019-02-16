@@ -1,5 +1,6 @@
 package com.dscjss.judgeapi.util;
 
+import com.amazonaws.AmazonClientException;
 import com.dscjss.judgeapi.s3.AmazonS3Config;
 import com.dscjss.judgeapi.s3.S3Services;
 import com.dscjss.judgeapi.submission.dto.TaskResult;
@@ -23,12 +24,12 @@ public class FileManager {
         this.s3Services = s3Services;
     }
 
-    public void uploadSubmissionSourceFile(String fileName, File file) throws InterruptedException {
+    public void uploadSubmissionSourceFile(String fileName, File file) throws InterruptedException, AmazonClientException {
         s3Services.uploadFile(fileName, file);
 
     }
 
-    public void uploadSubmissionOutputFile(String fileName, File file) throws InterruptedException {
+    public void uploadSubmissionOutputFile(String fileName, File file) throws InterruptedException, AmazonClientException {
         s3Services.uploadFile(fileName, file);
 
     }

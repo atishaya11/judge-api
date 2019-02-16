@@ -2,7 +2,11 @@ package com.dscjss.judgeapi.util;
 
 public class Constants {
 
-    public static final int DEFAULT_JUDGE_ID = 1;
+    public static final int JUDGE_ID_DEFAULT = 1;
+
+
+    public static final int MASTER_JUDGE_ID_DEFAULT = 1;
+    public static final int MASTER_JUDGE_ID_CODE_IN_LESS = 2;
 
     public static final String FETCH_TEST_DATA_URL = "http://localhost:8080/test_case/";
 

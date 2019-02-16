@@ -1,0 +1,21 @@
+version: '3'
+services:
+  db:
+    image: mysql
+    env_file:
+      - db/.env
+    ports:
+      - "3307:3306"
+    container_name: judge-api-db
+    command: --init-file /data/application/init.sql
+    volumes:
+      - /home/atishaya/test/coding-platform-compose/judge-api/init.sql:/data/application/init.sql
+  api:
+    build: .
+    image: atishaya/judge-api
+    depends_on:
+      - db
+    ports:
+      - "8084:8084"
+    env_file:
+      - api/.env

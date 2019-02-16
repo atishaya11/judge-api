@@ -40,7 +40,7 @@ public class TestCaseJudgeService {
                 testCase.setOutput(fetchOutputData(testCase.getTestCaseId()));
             }
             int judgeId = submission.getJudgeId();
-            if (judgeId == Constants.DEFAULT_JUDGE_ID) {
+            if (judgeId == Constants.JUDGE_ID_DEFAULT) {
                 Judge judge = new LineByLineJudge();
                 int result = judge.judge(testCase, taskResult.getStdOut());
                 if (testCase.isFetchData()) {

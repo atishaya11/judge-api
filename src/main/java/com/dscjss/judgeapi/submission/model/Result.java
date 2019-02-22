@@ -14,6 +14,8 @@ public class Result {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @Column(columnDefinition = "DEFAULT ")
     @Enumerated(value = EnumType.ORDINAL)
     private Status status;
     private double score;

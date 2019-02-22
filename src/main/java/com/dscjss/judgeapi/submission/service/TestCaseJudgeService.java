@@ -30,9 +30,9 @@ public class TestCaseJudgeService {
         this.testCaseRepository = testCaseRepository;
     }
 
-
+    //TODO Test Case fetch exception
     @Transactional
-    public void judge(TaskResult taskResult, CountDownLatch countDownLatch) {
+    public void judge(TaskResult taskResult) {
         TestCase testCase = testCaseRepository.getOne(taskResult.getId());
         Submission submission = testCase.getSubmission();
         if (taskResult.getStatus() == Status.EXECUTED) {
@@ -58,7 +58,6 @@ public class TestCaseJudgeService {
         testCase.setTime(taskResult.getTime());
         testCase.setMemory(taskResult.getMemory());
         testCaseRepository.save(testCase);
-        countDownLatch.countDown();
         logger.info("Task id : {} judged.", taskResult.getId());
     }
 

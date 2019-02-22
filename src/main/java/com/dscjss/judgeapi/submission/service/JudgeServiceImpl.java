@@ -64,9 +64,7 @@ public class JudgeServiceImpl implements JudgeService {
         CountDownLatch countDownLatch = countDownLatchMap.putIfAbsent(submission.getId(), new CountDownLatch(submission.getTestCases().size()));
         if(countDownLatch == null){
             countDownLatch = countDownLatchMap.get(submission.getId());
-            CountDownLatch finalCountDownLatch = countDownLatch;
-            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, finalCountDownLatch);
-            new Thread(runnable).start();
+            run(taskResult, countDownLatch);
             try {
                 countDownLatch.await();
                 countDownLatchMap.remove(submission.getId());
@@ -77,11 +75,17 @@ public class JudgeServiceImpl implements JudgeService {
                 e.printStackTrace();
             }
         }else{
-            CountDownLatch finalCountDownLatch = countDownLatch;
-            Runnable runnable = () -> testCaseJudgeService.judge(taskResult, finalCountDownLatch);
-            new Thread(runnable).start();
+            run(taskResult, countDownLatch);
         }
 
+    }
+
+    private void run(TaskResult taskResult, CountDownLatch countDownLatch) {
+        Runnable runnable = () -> {
+            testCaseJudgeService.judge(taskResult);
+            countDownLatch.countDown();
+        };
+        new Thread(runnable).start();
     }
 
 

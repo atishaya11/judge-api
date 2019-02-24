@@ -9,6 +9,7 @@ import com.dscjss.judgeapi.submission.model.TestCase;
 import com.dscjss.judgeapi.submission.repository.TestCaseRepository;
 import com.dscjss.judgeapi.util.Constants;
 import com.dscjss.judgeapi.util.Status;
+import org.apache.tomcat.util.bcel.Const;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +63,7 @@ public class TestCaseJudgeService {
     }
 
     private String fetchOutputData(int testCaseId) {
-        String url = Constants.FETCH_TEST_DATA_URL + testCaseId + "/output";
+        String url = Constants.FETCH_TEST_DATA_URL + testCaseId + "/output?token=" + Constants.AUTH_TOKEN;
         return fetchData(url);
     }
 

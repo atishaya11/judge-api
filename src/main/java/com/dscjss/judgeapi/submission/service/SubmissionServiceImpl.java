@@ -8,6 +8,7 @@ import com.dscjss.judgeapi.submission.dto.Task;
 import com.dscjss.judgeapi.submission.dto.TestCaseDto;
 import com.dscjss.judgeapi.submission.exception.SourceDownloadException;
 import com.dscjss.judgeapi.submission.exception.TaskFailedException;
+import com.dscjss.judgeapi.submission.exception.TestDataDownloadException;
 import com.dscjss.judgeapi.submission.model.Compiler;
 import com.dscjss.judgeapi.submission.model.Result;
 import com.dscjss.judgeapi.submission.model.Submission;
@@ -143,12 +144,16 @@ public class SubmissionServiceImpl implements SubmissionService {
     }
 
 
-    private Task createTask(Submission submission, TestCase testCase) {
+    private Task createTask(Submission submission, TestCase testCase) throws TaskFailedException {
         Task task = new Task();
         task.setId(testCase.getId());
         task.setTimeLimit(testCase.getTimeLimit());
         if (testCase.isFetchData()) {
-            task.setInput(fetchInputData(testCase.getTestCaseId()));
+            try {
+                task.setInput(fetchInputData(testCase.getTestCaseId()));
+            } catch (TestDataDownloadException e) {
+                throw new TaskFailedException("Test data not downloaded.");
+            }
         } else {
             task.setInput(testCase.getInput());
         }
@@ -157,16 +162,20 @@ public class SubmissionServiceImpl implements SubmissionService {
         return task;
     }
     //TODO Handle exceptions thrown when the test cases cannot be fetched
-    private String fetchInputData(int testCaseId) {
-        String url = Constants.FETCH_TEST_DATA_URL + testCaseId + "/input";
+    private String fetchInputData(int testCaseId) throws TestDataDownloadException {
+        String url = Constants.FETCH_TEST_DATA_URL + testCaseId + "/input?token=" + Constants.AUTH_TOKEN;
         return fetchData(url);
     }
 
     //TODO Implement authentication token functionality
-    private String fetchData(String url) {
+    private String fetchData(String url) throws TestDataDownloadException {
         RestTemplate restTemplate = new RestTemplate();
-        String data = restTemplate.getForObject(url, String.class);
-        return data;
+        try {
+            return restTemplate.getForObject(url, String.class);
+        } catch (Exception e){
+            throw new TestDataDownloadException("Unable to test data.");
+        }
+
     }
 
     private void uploadSourceSubmissionFile(String submissionSourceFileName, String source) throws IOException, InterruptedException, AmazonClientException {

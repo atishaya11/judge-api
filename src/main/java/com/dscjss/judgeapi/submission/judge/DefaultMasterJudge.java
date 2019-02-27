@@ -6,7 +6,6 @@ import com.dscjss.judgeapi.submission.model.TestCase;
 import com.dscjss.judgeapi.util.Status;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DefaultMasterJudge implements MasterJudge {
 
@@ -46,15 +45,15 @@ public class DefaultMasterJudge implements MasterJudge {
                         break;
 
                 }
-                if(result.getStatus() != Status.CORRECT){
-                    break;
-                }
+
             }
-            if(result.getStatus() == Status.CORRECT){
-                result.setScore(maxScore);
+            if(result.getStatus() != Status.CORRECT){
+                break;
             }
 
-
+        }
+        if(result.getStatus() == Status.CORRECT){
+            result.setScore(maxScore);
         }
         int maxTime = Integer.MIN_VALUE;
         double maxMemory = Double.MIN_VALUE;

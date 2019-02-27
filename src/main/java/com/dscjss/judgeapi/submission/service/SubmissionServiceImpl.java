@@ -60,7 +60,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         this.fileManager = fileManager;
         this.taskSender = taskSender;
     }
-
+    //TODO validating submission
     @Override
     @Transactional(propagation = Propagation.REQUIRED)
     public Submission createSubmission(final SubmissionRequest submissionRequest) {
